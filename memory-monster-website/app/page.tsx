@@ -539,25 +539,38 @@ const AboutUsSection = () => {
             </div>
 
             {/* Floating connection dots */}
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-3 h-3 bg-white/20 rounded-full"
-                style={{
-                  top: `${20 + Math.random() * 60}%`,
-                  left: `${10 + Math.random() * 80}%`,
-                }}
-                animate={{
-                  y: [-10, 10, -10],
-                  opacity: [0.2, 0.5, 0.2],
-                }}
-                transition={{
-                  duration: 3 + Math.random() * 2,
-                  repeat: Infinity,
-                  delay: i * 0.5,
-                }}
-              />
-            ))}
+            {[...Array(6)].map((_, i) => {
+              // Use deterministic positioning based on index to avoid hydration mismatch
+              const positions = [
+                { top: 36, left: 55 },
+                { top: 53, left: 74 },
+                { top: 79, left: 78 },
+                { top: 70, left: 21 },
+                { top: 64, left: 85 },
+                { top: 39, left: 77 }
+              ];
+              const durations = [3.2, 4.1, 3.8, 4.5, 3.6, 4.2];
+              
+              return (
+                <motion.div
+                  key={i}
+                  className="absolute w-3 h-3 bg-white/20 rounded-full"
+                  style={{
+                    top: `${positions[i].top}%`,
+                    left: `${positions[i].left}%`,
+                  }}
+                  animate={{
+                    y: [-10, 10, -10],
+                    opacity: [0.2, 0.5, 0.2],
+                  }}
+                  transition={{
+                    duration: durations[i],
+                    repeat: Infinity,
+                    delay: i * 0.5,
+                  }}
+                />
+              );
+            })}
           </motion.div>
         </div>
 

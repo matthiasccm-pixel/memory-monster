@@ -21,7 +21,6 @@ try {
 // ===========================================
 
 // Import required modules
-const { exec } = require('child_process');
 const crypto = require('crypto');
 const keychain = require('keychain');
 const os = require('os');
@@ -82,7 +81,11 @@ function createWindow() {
   // Add cache-busting parameter in development
   const finalUrl = isDev ? `${startUrl}?t=${Date.now()}` : startUrl;
   mainWindow.loadURL(finalUrl);
-  mainWindow.webContents.openDevTools(); // Temporary for debugging
+  
+  // Only open DevTools in development when explicitly needed
+  if (isDev && process.env.OPEN_DEVTOOLS === '1') {
+    mainWindow.webContents.openDevTools();
+  }
   
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -1629,21 +1632,7 @@ ipcMain.handle('get-device-fingerprint', async () => {
 // SECURE AUTO-UPDATER IPC HANDLERS
 // ===========================================
 
-// Check for updates manually
-ipcMain.handle('check-for-updates', async () => {
-  try {
-    if (!secureUpdater) {
-      throw new Error('SecureUpdater not available in development mode');
-    }
-    
-    console.log('🔍 Manual update check requested');
-    const result = await secureUpdater.checkForUpdates(true);
-    return { success: true, result };
-  } catch (error) {
-    console.error('❌ Manual update check failed:', error);
-    return { success: false, error: error.message };
-  }
-});
+// Check for updates manually (duplicate removed - already handled above)
 
 // Get update status
 ipcMain.handle('get-update-status', async () => {

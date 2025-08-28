@@ -699,7 +699,7 @@ const AIVisualization = () => {
           style={{
             top: '50%',
             left: '50%',
-            transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-${80 + Math.random() * 40}px)`
+            transform: `translate(-50%, -50%) rotate(${i * 30}deg) translateY(-${80 + (i * 3.5)}px)`
           }}
           animate={{
             scale: [0, 1, 0],

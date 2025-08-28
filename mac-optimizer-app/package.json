@@ -29,6 +29,7 @@
     "electron": "^37.2.5",
     "electron-is-dev": "^2.0.0",
     "electron-updater": "^6.6.2",
+    "keychain": "^1.5.0",
     "lucide-react": "^0.263.1",
     "node-addon-api": "^8.5.0",
     "node-fetch": "^2.7.0",
@@ -105,7 +106,9 @@
       {
         "from": "native/build/Release/",
         "to": "Resources/native/",
-        "filter": ["*.node"]
+        "filter": [
+          "*.node"
+        ]
       }
     ],
     "mac": {
@@ -119,11 +122,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "publish": {

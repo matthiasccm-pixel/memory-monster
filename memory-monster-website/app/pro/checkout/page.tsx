@@ -89,26 +89,38 @@ function CheckoutContent() {
     <div className="min-h-screen animated-bg relative overflow-hidden">
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-64 h-64 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl"
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -100, 0],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 20 + i * 5,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-          />
-        ))}
+        {[...Array(6)].map((_, i) => {
+          // Use deterministic positioning to avoid hydration mismatch
+          const positions = [
+            { left: 10, top: 20 },
+            { left: 80, top: 60 },
+            { left: 30, top: 80 },
+            { left: 70, top: 10 },
+            { left: 50, top: 40 },
+            { left: 20, top: 70 }
+          ];
+          
+          return (
+            <motion.div
+              key={i}
+              className="absolute w-64 h-64 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-full blur-3xl"
+              animate={{
+                x: [0, 100, 0],
+                y: [0, -100, 0],
+                scale: [1, 1.2, 1],
+              }}
+              transition={{
+                duration: 20 + i * 5,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                left: `${positions[i].left}%`,
+                top: `${positions[i].top}%`,
+              }}
+            />
+          );
+        })}
       </div>
 
       {/* Navigation */}

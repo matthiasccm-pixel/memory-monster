@@ -468,25 +468,38 @@ const MemoryVisualization = () => {
       </div>
 
       {/* Floating memory indicators */}
-      {[...Array(6)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 bg-white/30 rounded-full"
-          style={{
-            top: `${20 + Math.random() * 60}%`,
-            left: `${10 + Math.random() * 80}%`,
-          }}
-          animate={{
-            y: [-10, 10, -10],
-            opacity: [0.3, 0.6, 0.3],
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            repeat: Infinity,
-            delay: i * 0.5,
-          }}
-        />
-      ))}
+      {[...Array(6)].map((_, i) => {
+        // Use deterministic positioning to avoid hydration mismatch
+        const positions = [
+          { top: 25, left: 15 },
+          { top: 45, left: 75 },
+          { top: 65, left: 20 },
+          { top: 35, left: 85 },
+          { top: 75, left: 45 },
+          { top: 55, left: 65 }
+        ];
+        const durations = [3.2, 4.3, 3.7, 4.8, 3.5, 4.1];
+        
+        return (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 bg-white/30 rounded-full"
+            style={{
+              top: `${positions[i].top}%`,
+              left: `${positions[i].left}%`,
+            }}
+            animate={{
+              y: [-10, 10, -10],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: durations[i],
+              repeat: Infinity,
+              delay: i * 0.5,
+            }}
+          />
+        );
+      })}
     </div>
   )
 }
