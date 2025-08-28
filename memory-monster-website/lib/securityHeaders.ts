@@ -148,13 +148,11 @@ export function validateRequest(request: NextRequest): { valid: boolean; reason?
   const suspiciousPaths = [
     '/wp-admin',
     '/phpmyadmin',
-    '/admin',
     '/.env',
     '/config',
     '/backup',
     '/.git',
     '/debug',
-    '/test',
     '/.aws',
     '/ssh',
     '/mysql'
