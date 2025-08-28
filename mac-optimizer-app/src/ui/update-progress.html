@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updating Memory Monster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .update-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .update-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .update-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .update-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 25px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: 200px 0; }
+        }
+
+        .progress-text {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
+        .security-icon {
+            width: 12px;
+            height: 12px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="update-container">
+        <div class="update-icon">
+            <span class="spinner"></span>
+        </div>
+        
+        <h1 class="update-title">Updating Memory Monster</h1>
+        <p class="update-subtitle">Please wait while the update downloads and installs</p>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="progress-text" id="progressText">Initializing download...</div>
+        <div class="status-text" id="statusText">Connecting to update server</div>
+        
+        <div class="security-badge">
+            <svg class="security-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.4,7 14.8,8.6 14.8,10V11.5C15.4,11.5 16,12.4 16,13V16C16,17.4 15.4,18 14.8,18H9.2C8.6,18 8,17.4 8,16V13C8,12.4 8.6,11.5 9.2,11.5V10C9.2,8.6 10.6,7 12,7M12,8.2C11.2,8.2 10.5,8.7 10.5,10V11.5H13.5V10C13.5,8.7 12.8,8.2 12,8.2Z"/>
+            </svg>
+            Secure update with signature verification
+        </div>
+    </div>
+
+    <script>
+        // Simple progress simulation for demo
+        // In production, this would receive real progress updates from the main process
+        let progress = 0;
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const statusText = document.getElementById('statusText');
+
+        const statuses = [
+            'Connecting to update server',
+            'Verifying update signature',
+            'Downloading update package',
+            'Verifying download integrity',
+            'Preparing installation'
+        ];
+
+        let statusIndex = 0;
+
+        function updateProgress() {
+            progress += Math.random() * 2;
+            
+            if (progress >= 100) {
+                progress = 100;
+                progressText.textContent = 'Download complete';
+                statusText.textContent = 'Installing update...';
+                progressBar.style.width = '100%';
+                return;
+            }
+
+            progressBar.style.width = progress + '%';
+            progressText.textContent = `${Math.round(progress)}% complete`;
+            
+            if (Math.random() > 0.7 && statusIndex < statuses.length - 1) {
+                statusIndex++;
+                statusText.textContent = statuses[statusIndex];
+            }
+        }
+
+        // Simulate progress updates
+        const progressInterval = setInterval(() => {
+            updateProgress();
+            if (progress >= 100) {
+                clearInterval(progressInterval);
+            }
+        }, 200);
+
+        // Listen for messages from main process (if implemented)
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'download-progress') {
+                const { percent, transferred, total } = event.data;
+                progressBar.style.width = percent + '%';
+                progressText.textContent = `${Math.round(percent)}% complete`;
+                statusText.textContent = `Downloaded ${Math.round(transferred / 1024 / 1024)} MB of ${Math.round(total / 1024 / 1024)} MB`;
+            }
+        });
+    </script>
+</body>
+</html>

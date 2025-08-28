@@ -4,6 +4,9 @@ const isDev = require('electron-is-dev');
 const { autoUpdater } = require('electron-updater');
 const { exec } = require('child_process');
 
+// Import SecureUpdater
+const SecureUpdater = require('./src/core/updater/SecureUpdater');
+
 // Load the native system monitor
 let systemMonitor;
 try {
@@ -14,8 +17,14 @@ try {
   systemMonitor = null;
 }
 // ===========================================
-// WEBSITE API INTEGRATION SETUP
+// APPLE SECURITY & WEBSITE API INTEGRATION
 // ===========================================
+
+// Import required modules
+const { exec } = require('child_process');
+const crypto = require('crypto');
+const keychain = require('keychain');
+const os = require('os');
 
 // Import node-fetch for API calls
 let fetch;
@@ -35,6 +44,7 @@ const WEBSITE_API_BASE = isDev
 console.log('🌐 API Base URL:', WEBSITE_API_BASE);
 
 let mainWindow;
+let secureUpdater;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -117,6 +127,17 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   
+  // Initialize SecureUpdater
+  if (!isDev) {
+    try {
+      secureUpdater = new SecureUpdater();
+      secureUpdater.startAutoUpdateChecking();
+      console.log('✅ SecureUpdater initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize SecureUpdater:', error);
+    }
+  }
+  
   // Create menu with cache clearing option in development
   if (isDev) {
     const template = [
@@ -172,6 +193,14 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
+  }
+});
+
+// Clean up SecureUpdater on quit
+app.on('before-quit', () => {
+  if (secureUpdater) {
+    console.log('🧹 Cleaning up SecureUpdater...');
+    secureUpdater.destroy();
   }
 });
 
@@ -1372,6 +1401,309 @@ ipcMain.handle('open-upgrade-page', async (event) => {
     return { success: true, url: upgradeUrl };
   } catch (error) {
     console.error('Failed to open upgrade page:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// ===========================================
+// APPLE SECURITY IPC HANDLERS
+// ===========================================
+
+/**
+ * Get Mac Hardware UUID (IOPlatformUUID)
+ * This is a unique identifier tied to the Mac's hardware
+ */
+ipcMain.handle('get-hardware-uuid', async () => {
+  return new Promise((resolve) => {
+    exec('system_profiler SPHardwareDataType | grep "Hardware UUID" | awk \'{print $3}\'', (error, stdout, stderr) => {
+      if (error) {
+        console.error('Failed to get hardware UUID:', error);
+        // Fallback to system info
+        exec('ioreg -rd1 -c IOPlatformExpertDevice | grep -E \'(UUID|IOPlatformUUID)\' | head -1 | sed \'s/.*= //\' | tr -d \'"\'', (fallbackError, fallbackStdout) => {
+          if (fallbackError) {
+            resolve({ success: false, error: 'Could not retrieve hardware UUID' });
+          } else {
+            resolve({ success: true, uuid: fallbackStdout.trim() });
+          }
+        });
+      } else {
+        const uuid = stdout.trim();
+        if (uuid && uuid.length > 0) {
+          resolve({ success: true, uuid });
+        } else {
+          resolve({ success: false, error: 'Empty UUID received' });
+        }
+      }
+    });
+  });
+});
+
+/**
+ * Store data securely in macOS Keychain
+ */
+ipcMain.handle('store-in-keychain', async (event, { service, account, password }) => {
+  try {
+    if (!keychain) {
+      throw new Error('Keychain module not available');
+    }
+
+    await new Promise((resolve, reject) => {
+      keychain.setPassword({ service, account, password }, (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log('✅ Data stored in Keychain successfully');
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Failed to store in Keychain:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Retrieve data from macOS Keychain
+ */
+ipcMain.handle('get-from-keychain', async (event, { service, account }) => {
+  try {
+    if (!keychain) {
+      throw new Error('Keychain module not available');
+    }
+
+    const password = await new Promise((resolve, reject) => {
+      keychain.getPassword({ service, account }, (error, password) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(password);
+        }
+      });
+    });
+
+    console.log('✅ Data retrieved from Keychain successfully');
+    return { success: true, password };
+  } catch (error) {
+    console.warn('⚠️ Failed to retrieve from Keychain:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Request Touch ID / Face ID authentication
+ */
+ipcMain.handle('request-biometric-auth', async (event, { reason }) => {
+  try {
+    // Use AppleScript to trigger Touch ID / Face ID prompt
+    const script = `
+      display dialog "${reason}" default button "Cancel" cancel button "Cancel" with hidden answer default answer "" with icon caution giving up after 30
+    `;
+    
+    return new Promise((resolve) => {
+      exec(`osascript -e '${script}'`, (error, stdout, stderr) => {
+        if (error) {
+          // Check if it's a user cancellation
+          if (error.message.includes('User canceled')) {
+            resolve({ success: false, error: 'User canceled authentication' });
+          } else {
+            resolve({ success: false, error: 'Biometric authentication failed' });
+          }
+        } else {
+          resolve({ success: true, method: 'system_auth' });
+        }
+      });
+    });
+  } catch (error) {
+    console.error('❌ Biometric auth failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Get detailed system information
+ */
+ipcMain.handle('get-system-info', async () => {
+  try {
+    const systemInfo = {
+      platform: os.platform(),
+      arch: os.arch(),
+      version: os.release(),
+      hostname: os.hostname(),
+      cpus: os.cpus().length,
+      memory: os.totalmem()
+    };
+
+    return { success: true, ...systemInfo };
+  } catch (error) {
+    console.error('❌ Failed to get system info:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Get CPU information
+ */
+ipcMain.handle('get-cpu-info', async () => {
+  try {
+    const cpus = os.cpus();
+    return { 
+      success: true, 
+      model: cpus[0]?.model || 'Unknown',
+      speed: cpus[0]?.speed || 0,
+      count: cpus.length
+    };
+  } catch (error) {
+    console.error('❌ Failed to get CPU info:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+/**
+ * Detect if running in virtual machine
+ */
+ipcMain.handle('detect-virtual-machine', async () => {
+  return new Promise((resolve) => {
+    exec('system_profiler SPHardwareDataType | grep -i "virtual\\|vmware\\|parallels\\|virtualbox"', (error, stdout) => {
+      const isVM = !error && stdout.trim().length > 0;
+      resolve({ success: true, isVM, details: stdout.trim() });
+    });
+  });
+});
+
+/**
+ * Enhanced device fingerprinting
+ */
+ipcMain.handle('get-device-fingerprint', async () => {
+  try {
+    const fingerprint = {
+      hardwareUUID: null,
+      serialNumber: null,
+      modelId: null,
+      bootTime: null
+    };
+
+    // Get hardware UUID
+    const uuidResult = await new Promise((resolve) => {
+      exec('system_profiler SPHardwareDataType | grep "Hardware UUID" | awk \'{print $3}\'', (error, stdout) => {
+        resolve(error ? null : stdout.trim());
+      });
+    });
+    fingerprint.hardwareUUID = uuidResult;
+
+    // Get serial number
+    const serialResult = await new Promise((resolve) => {
+      exec('system_profiler SPHardwareDataType | grep "Serial Number" | awk \'{print $4}\'', (error, stdout) => {
+        resolve(error ? null : stdout.trim());
+      });
+    });
+    fingerprint.serialNumber = serialResult;
+
+    // Get model identifier
+    const modelResult = await new Promise((resolve) => {
+      exec('sysctl -n hw.model', (error, stdout) => {
+        resolve(error ? null : stdout.trim());
+      });
+    });
+    fingerprint.modelId = modelResult;
+
+    // Get boot time
+    const bootResult = await new Promise((resolve) => {
+      exec('sysctl -n kern.boottime', (error, stdout) => {
+        resolve(error ? null : stdout.trim());
+      });
+    });
+    fingerprint.bootTime = bootResult;
+
+    console.log('✅ Device fingerprint generated');
+    return { success: true, fingerprint };
+  } catch (error) {
+    console.error('❌ Failed to generate device fingerprint:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// ===========================================
+// SECURE AUTO-UPDATER IPC HANDLERS
+// ===========================================
+
+// Check for updates manually
+ipcMain.handle('check-for-updates', async () => {
+  try {
+    if (!secureUpdater) {
+      throw new Error('SecureUpdater not available in development mode');
+    }
+    
+    console.log('🔍 Manual update check requested');
+    const result = await secureUpdater.checkForUpdates(true);
+    return { success: true, result };
+  } catch (error) {
+    console.error('❌ Manual update check failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Get update status
+ipcMain.handle('get-update-status', async () => {
+  try {
+    if (!secureUpdater) {
+      return { 
+        success: true, 
+        status: {
+          isChecking: false,
+          lastCheckTime: null,
+          currentVersion: app.getVersion(),
+          availableUpdate: null,
+          autoCheckEnabled: false,
+          isDevelopment: isDev
+        }
+      };
+    }
+    
+    const status = secureUpdater.getUpdateStatus();
+    return { success: true, status };
+  } catch (error) {
+    console.error('❌ Failed to get update status:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Force update installation (admin function)
+ipcMain.handle('force-update-install', async () => {
+  try {
+    if (!secureUpdater) {
+      throw new Error('SecureUpdater not available in development mode');
+    }
+    
+    console.log('🔄 Force update installation requested');
+    secureUpdater.forceUpdate();
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Force update failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Toggle auto-update checking
+ipcMain.handle('toggle-auto-updates', async (event, enabled) => {
+  try {
+    if (!secureUpdater) {
+      throw new Error('SecureUpdater not available in development mode');
+    }
+    
+    if (enabled) {
+      secureUpdater.startAutoUpdateChecking();
+      console.log('✅ Auto-update checking enabled');
+    } else {
+      secureUpdater.stopAutoUpdateChecking();
+      console.log('⏸️ Auto-update checking disabled');
+    }
+    
+    return { success: true, enabled };
+  } catch (error) {
+    console.error('❌ Failed to toggle auto-updates:', error);
     return { success: false, error: error.message };
   }
 });

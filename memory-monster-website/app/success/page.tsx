@@ -2,14 +2,14 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useUser, useSignUp } from '@clerk/nextjs';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, Zap, Download, Key, Copy, ExternalLink, ArrowRight, UserPlus, Lock } from 'lucide-react';
 import { Navigation, Footer, FloatingElements } from '../lib/components';
 
-export default function SuccessPage() {
+function SuccessPageContent() {
   const { user } = useUser();
   const { signUp, setActive } = useSignUp();
   const searchParams = useSearchParams();
@@ -668,5 +668,25 @@ export default function SuccessPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen animated-bg relative overflow-hidden">
+        <FloatingElements />
+        <Navigation />
+        <section className="pt-32 pb-20 px-6 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-white/70">Loading your success page...</p>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    }>
+      <SuccessPageContent />
+    </Suspense>
   );
 }

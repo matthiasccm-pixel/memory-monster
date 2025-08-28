@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import { 
   BarChart3, 
   FileSpreadsheet, 
-  PresentationChart,
+  Presentation,
   Calculator,
   Zap,
   TrendingUp,
@@ -205,7 +205,7 @@ const FeaturesSection = () => {
       color: 'from-green-400 to-emerald-500'
     },
     {
-      icon: <PresentationChart className="w-8 h-8 text-white" />,
+      icon: <Presentation className="w-8 h-8 text-white" />,
       title: 'Presentation Power',
       description: 'PowerPoint and Keynote stay responsive during critical client presentations.',
       color: 'from-orange-400 to-red-500'

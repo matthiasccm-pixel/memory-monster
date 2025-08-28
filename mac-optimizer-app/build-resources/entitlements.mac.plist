@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Core Electron entitlements -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-executable-page-protection</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+  <true/>
+  
+  <!-- Network access for updates and license validation -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+  <key>com.apple.security.network.server</key>
+  <false/>
+  
+  <!-- File system access for memory monitoring and cache cleaning -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <key>com.apple.security.files.downloads.read-write</key>
+  <true/>
+  
+  <!-- System monitoring capabilities -->
+  <key>com.apple.security.automation.apple-events</key>
+  <true/>
+  
+  <!-- Keychain access for secure storage -->
+  <key>keychain-access-groups</key>
+  <array>
+    <string>$(AppIdentifierPrefix)com.memorymonster.app</string>
+  </array>
+  
+  <!-- Hardware access for device fingerprinting -->
+  <key>com.apple.security.device.audio-input</key>
+  <false/>
+  <key>com.apple.security.device.camera</key>
+  <false/>
+  
+  <!-- Print access (not needed) -->
+  <key>com.apple.security.print</key>
+  <false/>
+  
+  <!-- Microphone and camera access (not needed) -->
+  <key>com.apple.security.device.microphone</key>
+  <false/>
+  
+  <!-- Address book access (not needed) -->
+  <key>com.apple.security.personal-information.addressbook</key>
+  <false/>
+  
+  <!-- Location access (not needed) -->
+  <key>com.apple.security.personal-information.location</key>
+  <false/>
+  
+  <!-- Calendar access (not needed) -->
+  <key>com.apple.security.personal-information.calendars</key>
+  <false/>
+  
+  <!-- Photos access (not needed) -->
+  <key>com.apple.security.personal-information.photos-library</key>
+  <false/>
+  
+  <!-- Bluetooth access (not needed) -->
+  <key>com.apple.security.device.bluetooth</key>
+  <false/>
+  
+  <!-- USB access (not needed) -->
+  <key>com.apple.security.device.usb</key>
+  <false/>
+  
+  <!-- App Sandbox (disabled for system monitoring) -->
+  <key>com.apple.security.app-sandbox</key>
+  <false/>
+  
+  <!-- Inherit entitlements for child processes -->
+  <key>com.apple.security.inherit</key>
+  <true/>
+  
+  <!-- Runtime hardening -->
+  <key>com.apple.security.cs.runtime</key>
+  <true/>
+</dict>
+</plist>

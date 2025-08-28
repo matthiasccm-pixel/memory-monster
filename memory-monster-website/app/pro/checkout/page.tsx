@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,7 +11,7 @@ import { Star, Shield, Lock, Zap, Sparkles, Crown, CheckCircle } from 'lucide-re
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-export default function ProCheckoutPage() {
+function CheckoutContent() {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -537,5 +537,13 @@ export default function ProCheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProCheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen animated-bg flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

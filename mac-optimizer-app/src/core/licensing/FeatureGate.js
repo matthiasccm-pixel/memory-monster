@@ -1,22 +1,79 @@
 /**
  * FeatureGate.js - Controls access to Free vs Pro features
- * FIXED: Now uses Electron-safe storage instead of localStorage
+ * ENHANCED: Now uses Apple Security Manager for hardware-based protection
  */
+
+import AppleSecurityManager from '../security/AppleSecurityManager.js';
 
 class FeatureGate {
   constructor() {
+    // Initialize Apple Security Manager
+    this.appleSecurityManager = new AppleSecurityManager();
+    this.securityInitialized = false;
+    
     // Keep existing functionality working
     this.licenseStatus = this.getLicenseStatus();
     this.initializeScanCount();
     
-    // NEW: Add website connection
-    this.websiteAPI = 'https://memorymonster.co/api'; // Change this to your actual website URL
-    this.isOnlineMode = true; // Will try online verification first
+    // Website connection
+    this.websiteAPI = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+    this.isOnlineMode = true;
     this.lastOnlineCheck = null;
-    this.offlineGracePeriod = 24 * 60 * 60 * 1000; // 24 hours
+    this.offlineGracePeriod = 6 * 60 * 60 * 1000; // Reduced to 6 hours for better security
     
-    // Track download on first launch
-    this.trackFirstLaunch();
+    // Initialize security and track first launch
+    this.initializeSecurity();
+  }
+
+  async initializeSecurity() {
+    try {
+      await this.appleSecurityManager.initialize();
+      this.securityInitialized = true;
+      console.log('✅ Apple Security Manager initialized');
+      
+      // Track download on first launch with secure device ID
+      await this.trackFirstLaunch();
+      
+      // Perform integrity check
+      await this.performSecurityCheck();
+    } catch (error) {
+      console.error('❌ Failed to initialize security:', error);
+      this.securityInitialized = false;
+    }
+  }
+
+  async performSecurityCheck() {
+    if (!this.securityInitialized) {
+      console.warn('⚠️ Security not initialized, skipping security check');
+      return { valid: true }; // Allow app to work without security in development
+    }
+
+    try {
+      // Validate device integrity
+      const integrity = await this.appleSecurityManager.validateDeviceIntegrity();
+      
+      if (!integrity.valid) {
+        console.warn('⚠️ Device integrity check failed:', integrity.failedChecks);
+        
+        // If risk score is too high, restrict features
+        if (integrity.riskScore > 0.5) {
+          console.warn('🚨 High risk score detected, restricting features');
+          this.licenseStatus = 'restricted';
+          return { valid: false, reason: 'Device integrity compromised' };
+        }
+      }
+
+      // Check if device is authorized
+      const isAuthorized = await this.appleSecurityManager.isDeviceAuthorized();
+      if (!isAuthorized) {
+        console.log('🔐 Device not authorized, checking for existing license...');
+      }
+
+      return { valid: true };
+    } catch (error) {
+      console.error('❌ Security check failed:', error);
+      return { valid: false, reason: 'Security check failed' };
+    }
   }
 
   // FIXED: Use Electron-safe storage instead of localStorage
@@ -242,14 +299,40 @@ class FeatureGate {
     }
   }
 
-  // NEW: Helper functions for website integration
+  // ENHANCED: Use Apple Security Manager for secure device identification
   getDeviceId() {
+    if (this.securityInitialized) {
+      // Use hardware-based secure device ID
+      const secureId = this.appleSecurityManager.getSecureDeviceId();
+      if (secureId) {
+        // Update stored device ID if it's different (migration)
+        const oldId = this.getStorageItem('memory_monster_device_id');
+        if (oldId && oldId !== secureId) {
+          console.log('🔄 Migrating to secure device ID');
+          this.setStorageItem('memory_monster_device_id', secureId);
+        }
+        return secureId;
+      }
+    }
+
+    // Fallback to stored ID or generate new one
     let deviceId = this.getStorageItem('memory_monster_device_id');
     if (!deviceId) {
-      deviceId = 'mm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      // Generate more secure fallback ID
+      deviceId = this.generateSecureFallbackId();
       this.setStorageItem('memory_monster_device_id', deviceId);
     }
     return deviceId;
+  }
+
+  generateSecureFallbackId() {
+    // More secure than the original simple random generation
+    const timestamp = Date.now().toString();
+    const random = crypto.getRandomValues(new Uint32Array(4))
+      .reduce((acc, val) => acc + val.toString(36), '');
+    const platform = navigator.platform.replace(/\s+/g, '').toLowerCase();
+    
+    return `mm_${platform}_${timestamp.slice(-8)}_${random.slice(0, 12)}`;
   }
 
   getAppVersion() {

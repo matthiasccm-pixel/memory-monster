@@ -105,6 +105,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Open external URLs (for upgrade links)
   openExternalURL: (url) => ipcRenderer.invoke('open-external-url', url),
   
+  // APPLE SECURITY & HARDWARE APIS
+  getHardwareUUID: () => ipcRenderer.invoke('get-hardware-uuid'),
+  storeInKeychain: (data) => ipcRenderer.invoke('store-in-keychain', data),
+  getFromKeychain: (data) => ipcRenderer.invoke('get-from-keychain', data),
+  requestBiometricAuth: (options) => ipcRenderer.invoke('request-biometric-auth', options),
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  getCPUInfo: () => ipcRenderer.invoke('get-cpu-info'),
+  detectVirtualMachine: () => ipcRenderer.invoke('detect-virtual-machine'),
+  getDeviceFingerprint: () => ipcRenderer.invoke('get-device-fingerprint'),
+  
   // Listen for IPC messages (for license activation)
   on: (channel, callback) => {
     const validChannels = ['license-activated', 'check-license-on-startup'];
