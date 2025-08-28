@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mac Optimizer Desktop Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Mac Optimizer Desktop App Test</h1>
+    <p>Testing if electronAPI is available in desktop app...</p>
+    
+    <button onclick="testAPI()">Test electronAPI</button>
+    <button onclick="testMemory()">Test Memory API</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        function testAPI() {
+            console.log('🔍 Testing electronAPI...');
+            const resultDiv = document.getElementById('result');
+            
+            if (window.electronAPI) {
+                console.log('✅ electronAPI available!');
+                console.log('📋 Available methods:', Object.keys(window.electronAPI));
+                resultDiv.innerHTML = `
+                    <h3>✅ SUCCESS: electronAPI is available!</h3>
+                    <p>Available methods: ${Object.keys(window.electronAPI).length}</p>
+                    <p>Methods: ${Object.keys(window.electronAPI).slice(0, 5).join(', ')}...</p>
+                `;
+            } else {
+                console.log('❌ electronAPI not available');
+                resultDiv.innerHTML = `
+                    <h3>❌ ERROR: electronAPI not available</h3>
+                    <p>The preload script is not working.</p>
+                `;
+            }
+        }
+        
+        async function testMemory() {
+            const resultDiv = document.getElementById('result');
+            
+            if (!window.electronAPI) {
+                resultDiv.innerHTML = '<h3>❌ electronAPI not available</h3>';
+                return;
+            }
+            
+            try {
+                console.log('🔍 Testing memory API...');
+                const memory = await window.electronAPI.getSystemMemory();
+                console.log('✅ Memory data:', memory);
+                
+                resultDiv.innerHTML = `
+                    <h3>✅ SUCCESS: Real Memory Data!</h3>
+                    <p>Total: ${(memory.total / 1024 / 1024 / 1024).toFixed(2)} GB</p>
+                    <p>Pressure: ${memory.pressure.toFixed(1)}%</p>
+                    <p>Used: ${(memory.used / 1024 / 1024 / 1024).toFixed(2)} GB</p>
+                `;
+            } catch (error) {
+                console.error('❌ Memory API error:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ ERROR: Memory API failed</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        // Test on load
+        window.onload = testAPI;
+    </script>
+</body>
+</html>
